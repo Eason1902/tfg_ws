@@ -1,0 +1,286 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="tfg_medium_world">
+
+    <!-- Luz -->
+    <light type="directional" name="sun">
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Suelo -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>24 24</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>24 24</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.75 0.75 0.75 1</ambient>
+            <diffuse>0.75 0.75 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pared exterior superior -->
+    <model name="wall_top">
+      <static>true</static>
+      <pose>0 10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>20 0.4 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>20 0.4 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pared exterior inferior -->
+    <model name="wall_bottom">
+      <static>true</static>
+      <pose>0 -10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>20 0.4 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>20 0.4 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pared exterior izquierda -->
+    <model name="wall_left">
+      <static>true</static>
+      <pose>-10 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 20 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 20 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pared exterior derecha -->
+    <model name="wall_right">
+      <static>true</static>
+      <pose>10 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 20 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 20 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pasillo horizontal central -->
+    <model name="central_wall_1">
+      <static>true</static>
+      <pose>-3 2.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>8 0.4 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>8 0.4 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="central_wall_2">
+      <static>true</static>
+      <pose>4 -2.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>8 0.4 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>8 0.4 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Paredes verticales internas -->
+    <model name="vertical_wall_1">
+      <static>true</static>
+      <pose>-5 -3 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 6 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 6 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="vertical_wall_2">
+      <static>true</static>
+      <pose>2 3.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 5 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 5 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="vertical_wall_3">
+      <static>true</static>
+      <pose>6 3 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 5 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 5 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Obstáculos tipo caja -->
+    <model name="box_obstacle_1">
+      <static>true</static>
+      <pose>-7 6 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 1.2 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 1.2 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_2">
+      <static>true</static>
+      <pose>-1 -6 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.5 1.5 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.5 1.5 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_3">
+      <static>true</static>
+      <pose>5 -6 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 1.2 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 1.2 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_4">
+      <static>true</static>
+      <pose>7 7 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.5 1.5 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.5 1.5 1</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Obstáculos pequeños para crear desvíos -->
+    <model name="small_box_1">
+      <static>true</static>
+      <pose>-3 6 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.8 0.8 0.8</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.8 0.8 0.8</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="small_box_2">
+      <static>true</static>
+      <pose>1 -7 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.8 0.8 0.8</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.8 0.8 0.8</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="small_box_3">
+      <static>true</static>
+      <pose>4 1 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.8 0.8 0.8</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.8 0.8 0.8</size></box></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Marcadores visuales de inicio y objetivo -->
+    <model name="start_marker">
+      <static>true</static>
+      <pose>-8 -8 0.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.4</radius><length>0.1</length></cylinder></geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="goal_marker">
+      <static>true</static>
+      <pose>8 8 0.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.4</radius><length>0.1</length></cylinder></geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

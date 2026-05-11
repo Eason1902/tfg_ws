@@ -1,0 +1,423 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="tfg_complex_world">
+
+        <plugin filename="libgz-sim-physics-system.so"
+            name="gz::sim::systems::Physics">
+    </plugin>
+
+    <plugin filename="libgz-sim-user-commands-system.so"
+            name="gz::sim::systems::UserCommands">
+    </plugin>
+
+    <plugin filename="libgz-sim-scene-broadcaster-system.so"
+            name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+
+    <plugin filename="libgz-sim-sensors-system.so"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre</render_engine>
+    </plugin>
+    <!-- Luz -->
+    <light type="directional" name="sun">
+      <pose>0 0 12 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Suelo -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>30 30</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>30 30</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.75 0.75 0.75 1</ambient>
+            <diffuse>0.75 0.75 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Paredes exteriores -->
+    <model name="wall_top">
+      <static>true</static>
+      <pose>0 12 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>24 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>24 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="wall_bottom">
+      <static>true</static>
+      <pose>0 -12 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>24 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>24 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="wall_left">
+      <static>true</static>
+      <pose>-12 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 24 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 24 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="wall_right">
+      <static>true</static>
+      <pose>12 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 24 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 24 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Zona izquierda: pasillos tipo laberinto -->
+    <model name="maze_wall_1">
+      <static>true</static>
+      <pose>-8 6 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="maze_wall_2">
+      <static>true</static>
+      <pose>-5 3 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 6 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 6 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="maze_wall_3">
+      <static>true</static>
+      <pose>-8 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="maze_wall_4">
+      <static>true</static>
+      <pose>-9 -3 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 6 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 6 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="maze_wall_5">
+      <static>true</static>
+      <pose>-6 -6 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Zona central: obstáculos que obligan a rodear -->
+    <model name="central_wall_1">
+      <static>true</static>
+      <pose>0 4 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>7 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>7 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="central_wall_2">
+      <static>true</static>
+      <pose>0 -4 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>7 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>7 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="central_wall_3">
+      <static>true</static>
+      <pose>-3 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 6 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 6 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="central_wall_4">
+      <static>true</static>
+      <pose>3 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 6 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 6 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Aperturas indirectas / desvíos -->
+    <model name="detour_wall_1">
+      <static>true</static>
+      <pose>-1.5 7.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="detour_wall_2">
+      <static>true</static>
+      <pose>1.5 -7.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Zona derecha: rutas alternativas -->
+    <model name="right_wall_1">
+      <static>true</static>
+      <pose>7 7 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>5 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>5 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="right_wall_2">
+      <static>true</static>
+      <pose>5 4 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 5.5 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 5.5 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="right_wall_3">
+      <static>true</static>
+      <pose>8 1 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>5 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>5 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="right_wall_4">
+      <static>true</static>
+      <pose>7 -3 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.4 5 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.4 5 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="right_wall_5">
+      <static>true</static>
+      <pose>9 -7 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>5 0.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>5 0.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Obstáculos aislados -->
+    <model name="box_obstacle_1">
+      <static>true</static>
+      <pose>-10 9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.2 1.2 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.2 1.2 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_2">
+      <static>true</static>
+      <pose>-2 9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.2 1.2 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.2 1.2 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_3">
+      <static>true</static>
+      <pose>-7 -9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.4 1.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.4 1.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_4">
+      <static>true</static>
+      <pose>0 -9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.2 1.2 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.2 1.2 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_5">
+      <static>true</static>
+      <pose>6 9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.4 1.4 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.4 1.4 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_6">
+      <static>true</static>
+      <pose>10 -2 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.2 1.2 1</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.2 1.2 1</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Obstáculos pequeños para estrechar pasos -->
+    <model name="small_box_1">
+      <static>true</static>
+      <pose>-4 8 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="small_box_2">
+      <static>true</static>
+      <pose>-1 2 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="small_box_3">
+      <static>true</static>
+      <pose>1 -2 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="small_box_4">
+      <static>true</static>
+      <pose>4 -6 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <model name="small_box_5">
+      <static>true</static>
+      <pose>9 4 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.8 0.8 0.8</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- Marcador de inicio -->
+    <model name="start_marker">
+      <static>true</static>
+      <pose>-10 -10 0.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.45</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Objetivo principal -->
+    <model name="goal_marker">
+      <static>true</static>
+      <pose>10 10 0.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.45</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Objetivo alternativo 1 -->
+    <model name="goal_marker_2">
+      <static>true</static>
+      <pose>10 -10 0.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.35</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0 0 1 1</ambient>
+            <diffuse>0 0 1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Objetivo alternativo 2 -->
+    <model name="goal_marker_3">
+      <static>true</static>
+      <pose>-10 10 0.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.35</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>1 1 0 1</ambient>
+            <diffuse>1 1 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
