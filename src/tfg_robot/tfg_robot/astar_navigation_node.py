@@ -1,6 +1,7 @@
 import math
-
+import time
 import rclpy
+import numpy as np
 from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
@@ -57,6 +58,9 @@ class AStarNavigationNode(Node):
         self.world_path = []
         self.path_generated = False
         self.current_waypoint_index = 0
+        self.goal_reached = False
+        self.navigation_start_time = None
+        self.navigation_end_time = None
 
         self.distance_tolerance = 0.15
         self.angle_tolerance = 0.15
@@ -113,7 +117,15 @@ class AStarNavigationNode(Node):
         self.get_logger().info(f"Grid start: {start}")
         self.get_logger().info(f"Grid goal: {goal}")
 
+        start_time = time.perf_counter()
+
         path, visited_nodes = astar(self.grid, start, goal)
+
+        end_time = time.perf_counter()
+
+        execution_time = end_time - start_time
+
+        self.get_logger().info(f"Execution time: {execution_time:.6f} seconds")
 
         if path is None:
             self.get_logger().error("No path found.")
@@ -130,6 +142,7 @@ class AStarNavigationNode(Node):
         #self.world_path = self.world_path[::5]
 
         self.path_generated = True
+        self.navigation_start_time = time.perf_counter()
 
         self.get_logger().info("A* path generated from real robot position.")
         self.get_logger().info(f"Visited nodes: {visited_nodes}")
@@ -155,13 +168,14 @@ class AStarNavigationNode(Node):
 
         data = []
 
-        for row in self.grid:
-            for cell in row:
+        rviz_grid = self.grid
+        for row in rviz_grid:
+                for cell in row:
 
-                if cell == 1:
-                    data.append(100)
-                else:
-                    data.append(0)
+                    if cell == 1:
+                       data.append(100)
+                    else:
+                       data.append(0)
 
         map_msg.data = data
 
@@ -210,9 +224,22 @@ class AStarNavigationNode(Node):
             return
 
         if self.current_waypoint_index >= len(self.world_path):
-            self.stop_robot()
-            self.get_logger().info("Goal reached.")
-            return
+
+            if not self.goal_reached:
+               self.goal_reached = True
+               self.navigation_end_time = time.perf_counter()
+
+               navigation_time = self.navigation_end_time - self.navigation_start_time
+
+               self.stop_robot()
+
+               self.get_logger().info("=================================")
+               self.get_logger().info("RESULT: SUCCESS")
+               self.get_logger().info("Robot moved successfully: YES")
+               self.get_logger().info(f"Navigation time: {navigation_time:.3f} seconds")
+               self.get_logger().info("=================================")
+
+            return   
 
         target_x, target_y = self.world_path[self.current_waypoint_index]
 
