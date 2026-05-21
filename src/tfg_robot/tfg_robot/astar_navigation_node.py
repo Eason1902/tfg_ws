@@ -16,6 +16,8 @@ from geometry_msgs.msg import PoseStamped
 
 from nav_msgs.msg import OccupancyGrid
 
+from datetime import datetime
+
 
 def world_to_grid_node(x, y, world_size=30.0, resolution=0.2):
     origin_x = -world_size / 2.0
@@ -116,6 +118,15 @@ class AStarNavigationNode(Node):
         self.get_logger().info(f"Robot world position: ({self.current_x:.2f}, {self.current_y:.2f})")
         self.get_logger().info(f"Grid start: {start}")
         self.get_logger().info(f"Grid goal: {goal}")
+        self.get_logger().info("Path planning started.")
+
+        self.get_logger().info("=================================")
+        self.get_logger().info("Experiment ID: M3_ASTAR_ORIGINAL_RUN2")
+        self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.get_logger().info("Map: Complex")
+        self.get_logger().info("Algorithm: A*")
+        self.get_logger().info("Version: Original")
+        self.get_logger().info("=================================")
 
         start_time = time.perf_counter()
 
@@ -131,6 +142,8 @@ class AStarNavigationNode(Node):
             self.get_logger().error("No path found.")
             self.world_path = []
             return
+        
+        self.get_logger().info("Path found.")
 
         self.world_path = path_to_world(
             path,
@@ -139,10 +152,11 @@ class AStarNavigationNode(Node):
         )
 
         # Reduce waypoints to make motion smoother
-        #self.world_path = self.world_path[::5]
+        self.world_path = self.world_path[::5]
 
         self.path_generated = True
         self.navigation_start_time = time.perf_counter()
+        self.get_logger().info("Navigation started.")
 
         self.get_logger().info("A* path generated from real robot position.")
         self.get_logger().info(f"Visited nodes: {visited_nodes}")
@@ -237,6 +251,7 @@ class AStarNavigationNode(Node):
                self.get_logger().info("RESULT: SUCCESS")
                self.get_logger().info("Robot moved successfully: YES")
                self.get_logger().info(f"Navigation time: {navigation_time:.3f} seconds")
+               self.get_logger().info("Goal reached.")
                self.get_logger().info("=================================")
 
             return   
