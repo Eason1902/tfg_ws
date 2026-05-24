@@ -67,7 +67,7 @@ class AStarNavigationNode(Node):
         self.distance_tolerance = 0.1
         self.angle_tolerance = 0.08
 
-        self.linear_speed = 0.80
+        self.linear_speed = 1.0
         self.angular_speed = 1.5
 
         self.world_size = 30.0
@@ -121,7 +121,7 @@ class AStarNavigationNode(Node):
         self.get_logger().info("Path planning started.")
 
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_ASTAR_ORIGINAL_RUN2")
+        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION3_RUN1")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.get_logger().info("Map: Complex")
         self.get_logger().info("Algorithm: A*")
@@ -151,7 +151,8 @@ class AStarNavigationNode(Node):
             resolution=self.resolution
         )
 
-      
+         # Reduce waypoints to make motion smoother
+        self.world_path = self.world_path[::5]
 
         self.path_generated = True
         self.navigation_start_time = time.perf_counter()

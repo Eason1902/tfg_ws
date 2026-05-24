@@ -64,8 +64,8 @@ class AStarNavigationNode(Node):
         self.navigation_start_time = None
         self.navigation_end_time = None
 
-        self.distance_tolerance = 0.15
-        self.angle_tolerance = 0.15
+        self.distance_tolerance = 0.1
+        self.angle_tolerance = 0.08
 
         self.linear_speed = 0.80
         self.angular_speed = 1.5
@@ -121,7 +121,7 @@ class AStarNavigationNode(Node):
         self.get_logger().info("Path planning started.")
 
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_ASTAR_ORIGINAL_RUN2")
+        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION2_RUN1")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.get_logger().info("Map: Complex")
         self.get_logger().info("Algorithm: A*")
@@ -151,7 +151,7 @@ class AStarNavigationNode(Node):
             resolution=self.resolution
         )
 
-        # Reduce waypoints to make motion smoother
+         # Reduce waypoints to make motion smoother
         self.world_path = self.world_path[::5]
 
         self.path_generated = True
@@ -276,7 +276,7 @@ class AStarNavigationNode(Node):
             cmd.angular.z = self.angular_speed if angle_error > 0 else -self.angular_speed
         else:
             cmd.linear.x = self.linear_speed
-            cmd.angular.z = 0.5 * angle_error
+            cmd.angular.z = 0.9 * angle_error
 
         self.cmd_pub.publish(cmd)
 
