@@ -121,11 +121,11 @@ class AStarNavigationNode(Node):
         self.get_logger().info("Path planning started.")
 
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION1_RUN1")
+        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION1_RUN")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.get_logger().info("Map: Complex")
         self.get_logger().info("Algorithm: A*")
-        self.get_logger().info("Version: Original")
+        self.get_logger().info("Version: Version1")
         self.get_logger().info("=================================")
 
         start_time = time.perf_counter()

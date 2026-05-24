@@ -121,11 +121,11 @@ class AStarNavigationNode(Node):
         self.get_logger().info("Path planning started.")
 
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION3_RUN1")
+        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION3_RUN3")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.get_logger().info("Map: Complex")
         self.get_logger().info("Algorithm: A*")
-        self.get_logger().info("Version: Original")
+        self.get_logger().info("Version: Version3")
         self.get_logger().info("=================================")
 
         start_time = time.perf_counter()
@@ -152,7 +152,11 @@ class AStarNavigationNode(Node):
         )
 
          # Reduce waypoints to make motion smoother
-        self.world_path = self.world_path[::5]
+        self.world_path = self.reduce_waypoints_by_angle(
+        self.world_path,
+        angle_threshold=0.35,
+        step=5
+        )
 
         self.path_generated = True
         self.navigation_start_time = time.perf_counter()
@@ -214,6 +218,37 @@ class AStarNavigationNode(Node):
 
         self.path_pub.publish(path_msg)
 
+
+    def reduce_waypoints_by_angle(self, path, angle_threshold=0.35, step=5):
+      if len(path) <= 2:
+        return path
+
+      reduced_path = [path[0]]
+
+      counter = 0
+
+      for i in range(1, len(path) - 1):
+        x1, y1 = path[i - 1]
+        x2, y2 = path[i]
+        x3, y3 = path[i + 1]
+
+        angle1 = math.atan2(y2 - y1, x2 - x1)
+        angle2 = math.atan2(y3 - y2, x3 - x2)
+
+        angle_change = abs(self.normalize_angle(angle2 - angle1))
+
+        counter += 1
+
+        if angle_change > angle_threshold:
+            reduced_path.append(path[i])
+            counter = 0
+        elif counter >= step:
+            reduced_path.append(path[i])
+            counter = 0
+
+      reduced_path.append(path[-1])
+
+      return reduced_path
 
 
     def normalize_angle(self, angle):
