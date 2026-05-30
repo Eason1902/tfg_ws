@@ -67,13 +67,13 @@ class AStarNavigationNode(Node):
         self.distance_tolerance = 0.1
         self.angle_tolerance = 0.08
 
-        self.linear_speed = 1.0
+        self.linear_speed = 0.8
         self.angular_speed = 1.5
 
         self.world_size = 30.0
         self.resolution = 0.2
 
-        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_medium.world"
+        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_simple.world"
 
         self.grid = create_grid_from_world(
             world_file=self.world_file,
@@ -121,11 +121,11 @@ class AStarNavigationNode(Node):
         self.get_logger().info("Path planning started.")
 
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION3_RUN1")
+        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION3A_RUN1")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d')}")
-        self.get_logger().info("Map: Medium")
+        self.get_logger().info("Map: Simple")
         self.get_logger().info("Algorithm: A*")
-        self.get_logger().info("Version: Version3")
+        self.get_logger().info("Version: Version3A")
         self.get_logger().info("=================================")
 
         start_time = time.perf_counter()

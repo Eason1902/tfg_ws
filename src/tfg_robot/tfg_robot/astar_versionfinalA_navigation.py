@@ -67,7 +67,7 @@ class AStarNavigationNode(Node):
         self.distance_tolerance = 0.1
         self.angle_tolerance = 0.08
 
-        self.linear_speed = 1.0
+        self.linear_speed = 1.2
         self.angular_speed = 1.5
 
         self.world_size = 30.0
@@ -76,9 +76,18 @@ class AStarNavigationNode(Node):
         self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_medium.world"
 
         self.grid = create_grid_from_world(
-            world_file=self.world_file,
-            resolution=self.resolution,
-            world_size=self.world_size
+           world_file=self.world_file,
+           resolution=self.resolution,
+           world_size=self.world_size
+        )
+
+        # Keep original grid for RViz2 visualization
+        self.visual_grid = self.grid
+
+# Use inflated grid only for A* planning
+        self.planning_grid = self.inflate_obstacles(
+           self.grid,
+           inflation_radius=2
         )
 
         self.timer = self.create_timer(0.1, self.control_loop)
@@ -121,16 +130,16 @@ class AStarNavigationNode(Node):
         self.get_logger().info("Path planning started.")
 
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_ASTAR_VERSION3_RUN1")
+        self.get_logger().info("Experiment ID: M3_ASTAR_VERSIONFinalA_RUN3")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d')}")
         self.get_logger().info("Map: Medium")
         self.get_logger().info("Algorithm: A*")
-        self.get_logger().info("Version: Version3")
+        self.get_logger().info("Version: finalA")
         self.get_logger().info("=================================")
 
         start_time = time.perf_counter()
 
-        path, visited_nodes = astar(self.grid, start, goal)
+        path, visited_nodes = astar(self.planning_grid, start, goal)
 
         end_time = time.perf_counter()
 
@@ -150,6 +159,9 @@ class AStarNavigationNode(Node):
             world_size=self.world_size,
             resolution=self.resolution
         )
+        
+        
+
 
          # Reduce waypoints to make motion smoother
         self.world_path = self.reduce_waypoints_by_angle(
@@ -198,6 +210,31 @@ class AStarNavigationNode(Node):
         map_msg.data = data
 
         self.map_pub.publish(map_msg)    
+
+
+    def inflate_obstacles(self, grid, inflation_radius=0.005):
+        inflated_grid = np.copy(grid)
+
+        rows, cols = grid.shape
+
+        for row in range(rows):
+          for col in range(cols):
+
+           if grid[row][col] == 1:
+
+              for dr in range(-inflation_radius, inflation_radius + 1):
+               for dc in range(-inflation_radius, inflation_radius + 1):
+
+                new_row = row + dr
+                new_col = col + dc
+
+                if 0 <= new_row < rows and 0 <= new_col < cols:
+                    distance = math.sqrt(dr * dr + dc * dc)
+
+                    if distance <= inflation_radius:
+                        inflated_grid[new_row][new_col] = 1
+
+        return inflated_grid    
     
     def publish_path(self):
         path_msg = Path()
