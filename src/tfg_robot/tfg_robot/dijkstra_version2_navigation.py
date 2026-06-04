@@ -7,7 +7,7 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
-
+from datetime import datetime
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
 from nav_msgs.msg import OccupancyGrid
@@ -119,10 +119,11 @@ class DijkstraNavigationNode(Node):
         self.get_logger().info("Path planning started.")
      
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_DIJKSTRA_ORIGINAL_RUN3")
+        self.get_logger().info("Experiment ID: M3_DIJKSTRA_Version2_RUN3")
+        self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d')}")
         self.get_logger().info("Map: Complex")
         self.get_logger().info("Algorithm: Dijkstra")
-        self.get_logger().info("Version: Original")
+        self.get_logger().info("Version: Version2")
         self.get_logger().info("=================================")
 
         start_time = time.perf_counter()
@@ -146,7 +147,7 @@ class DijkstraNavigationNode(Node):
         )
 
         # Reduce waypoints to make motion smoother
-        # self.world_path = self.world_path[::5]
+        self.world_path = self.reduce_waypoints_dynamic(self.world_path)
         
         self.get_logger().info("Path found.")
         self.path_generated = True
@@ -205,6 +206,31 @@ class DijkstraNavigationNode(Node):
             path_msg.poses.append(pose)
 
         self.path_pub.publish(path_msg)
+
+    def reduce_waypoints_dynamic(self, path):
+      if len(path) <= 2:
+        return path
+
+      reduced_path = [path[0]]
+
+      for i in range(1, len(path) - 1):
+        prev_x, prev_y = path[i - 1]
+        curr_x, curr_y = path[i]
+        next_x, next_y = path[i + 1]
+
+        angle1 = math.atan2(curr_y - prev_y, curr_x - prev_x)
+        angle2 = math.atan2(next_y - curr_y, next_x - curr_x)
+
+        angle_diff = abs(self.normalize_angle(angle2 - angle1))
+
+        if angle_diff > 0.20:
+            reduced_path.append(path[i])
+        elif i % 5 == 0:
+            reduced_path.append(path[i])
+
+      reduced_path.append(path[-1])
+
+      return reduced_path
 
     def normalize_angle(self, angle):
         while angle > math.pi:

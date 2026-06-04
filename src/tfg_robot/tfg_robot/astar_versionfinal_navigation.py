@@ -73,7 +73,7 @@ class AStarNavigationNode(Node):
         self.world_size = 30.0
         self.resolution = 0.2
 
-        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_medium.world"
+        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_simple.world"
 
         self.grid = create_grid_from_world(
            world_file=self.world_file,
@@ -132,7 +132,7 @@ class AStarNavigationNode(Node):
         self.get_logger().info("=================================")
         self.get_logger().info("Experiment ID: M3_ASTAR_VERSIONFinal_RUN3")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d')}")
-        self.get_logger().info("Map: Medium")
+        self.get_logger().info("Map: simple")
         self.get_logger().info("Algorithm: A*")
         self.get_logger().info("Version: final")
         self.get_logger().info("=================================")
