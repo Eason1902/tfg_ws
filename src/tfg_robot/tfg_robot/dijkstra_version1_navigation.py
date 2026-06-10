@@ -3,6 +3,7 @@ import time
 import rclpy
 import numpy as np
 
+
 from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
@@ -72,7 +73,7 @@ class DijkstraNavigationNode(Node):
         self.world_size = 30.0
         self.resolution = 0.2
 
-        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_complex.world"
+        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_simple.world"
 
         self.grid = create_grid_from_world(
             world_file=self.world_file,
@@ -122,7 +123,7 @@ class DijkstraNavigationNode(Node):
         self.get_logger().info("=================================")
         self.get_logger().info("Experiment ID: M3_DIJKSTRA_Version1_RUN3")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d')}")
-        self.get_logger().info("Map: Complex")
+        self.get_logger().info("Map: Simple")
         self.get_logger().info("Algorithm: Dijkstra")
         self.get_logger().info("Version: Version1")
         self.get_logger().info("=================================")

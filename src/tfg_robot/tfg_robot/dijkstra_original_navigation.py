@@ -7,6 +7,7 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
+from datetime import datetime
 
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path

@@ -72,17 +72,23 @@ class DijkstraNavigationNode(Node):
         self.resolution = 0.2
         self.safety_distance = 0.4
 
-        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_complex.world"
+        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_simple.world"
 
         self.grid = create_grid_from_world(
-            world_file=self.world_file,
-            resolution=self.resolution,
-            world_size=self.world_size
+          world_file=self.world_file,
+          resolution=self.resolution,
+          world_size=self.world_size
         )
-        self.grid = self.inflate_obstacles(
-          self.grid,
-          self.safety_distance
+
+       # Keep original grid for RViz2 visualization
+        self.visual_grid = self.grid
+
+        # Use inflated grid only for Dijkstra planning
+        self.planning_grid = self.inflate_obstacles(
+         self.grid,
+         inflation_radius=2
         )
+       
 
         self.timer = self.create_timer(0.1, self.control_loop)
 
@@ -124,16 +130,16 @@ class DijkstraNavigationNode(Node):
         self.get_logger().info("Path planning started.")
      
         self.get_logger().info("=================================")
-        self.get_logger().info("Experiment ID: M3_DIJKSTRA_Version3_RUN3")
+        self.get_logger().info("Experiment ID: M3_DIJKSTRA_Version3_RUN1")
         self.get_logger().info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d')}")
-        self.get_logger().info("Map: Complex")
+        self.get_logger().info("Map: Simple")
         self.get_logger().info("Algorithm: Dijkstra")
         self.get_logger().info("Version: Version3")
         self.get_logger().info("=================================")
 
         start_time = time.perf_counter()
 
-        path, visited_nodes = dijkstra(self.grid, start, goal)
+        path, visited_nodes = dijkstra(self.planning_grid, start, goal)
 
         end_time = time.perf_counter()
         execution_time = end_time - start_time
@@ -212,25 +218,30 @@ class DijkstraNavigationNode(Node):
 
         self.path_pub.publish(path_msg)
 
-    def inflate_obstacles(self, grid, safety_distance):
-        inflated_grid = grid.copy()
+    def inflate_obstacles(self, grid, inflation_radius=2):
+      inflated_grid = np.copy(grid)
 
-        safety_cells = int(safety_distance / self.resolution)
+      rows, cols = grid.shape
 
-        rows, cols = grid.shape
+      for row in range(rows):
+        for col in range(cols):
 
-        for row in range(rows):
-          for col in range(cols):
             if grid[row][col] == 1:
-                for dr in range(-safety_cells, safety_cells + 1):
-                    for dc in range(-safety_cells, safety_cells + 1):
+
+                for dr in range(-inflation_radius, inflation_radius + 1):
+                    for dc in range(-inflation_radius, inflation_radius + 1):
+
                         new_row = row + dr
                         new_col = col + dc
 
                         if 0 <= new_row < rows and 0 <= new_col < cols:
-                            inflated_grid[new_row][new_col] = 1
 
-        return inflated_grid    
+                            distance = math.sqrt(dr * dr + dc * dc)
+
+                            if distance <= inflation_radius:
+                                inflated_grid[new_row][new_col] = 1
+
+      return inflated_grid
 
     def reduce_waypoints_dynamic(self, path):
       if len(path) <= 2:
@@ -265,6 +276,7 @@ class DijkstraNavigationNode(Node):
             angle += 2.0 * math.pi
 
         return angle
+
 
     def control_loop(self):
         if self.current_x is None or self.current_y is None or self.current_yaw is None:
@@ -305,20 +317,25 @@ class DijkstraNavigationNode(Node):
         target_angle = math.atan2(dy, dx)
         angle_error = self.normalize_angle(target_angle - self.current_yaw)
 
+        
+
         cmd = Twist()
 
         if distance < self.distance_tolerance:
-            self.current_waypoint_index += 1
-            return
+          self.current_waypoint_index += 1
+          return
 
         if abs(angle_error) > self.angle_tolerance:
-            cmd.linear.x = 0.0
-            cmd.angular.z = self.angular_speed if angle_error > 0 else -self.angular_speed
+          cmd.linear.x = 0.0
+          cmd.angular.z = self.angular_speed if angle_error > 0 else -self.angular_speed
         else:
-            cmd.linear.x = self.linear_speed
-            cmd.angular.z = 0.5 * angle_error
+          cmd.linear.x = self.linear_speed
+          cmd.angular.z = 0.5 * angle_error
 
         self.cmd_pub.publish(cmd)
+    
+    
+
 
     def stop_robot(self):
         cmd = Twist()

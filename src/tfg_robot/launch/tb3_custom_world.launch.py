@@ -5,7 +5,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    world_path = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_simple.world"
+    world_path = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_complex.world"
     robot_path = "/home/yilun/tfg_ws/src/tfg_robot/models/turtlebot3_burger/model.sdf"
     model_path = "/home/yilun/tfg_ws/src/tfg_robot/models"
 

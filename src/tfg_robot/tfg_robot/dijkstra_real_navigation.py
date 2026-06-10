@@ -2,6 +2,7 @@ import math
 import time
 import rclpy
 import numpy as np
+from PIL import Image
 
 from rclpy.node import Node
 
@@ -12,19 +13,21 @@ from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
 from nav_msgs.msg import OccupancyGrid
 from datetime import datetime
-from tfg_robot.sdf_to_grid import create_grid_from_world
 from tfg_robot.dijkstra_planner import dijkstra
-from tfg_robot.path_utils import path_to_world
 
 
-def world_to_grid_node(x, y, world_size=30.0, resolution=0.2):
-    origin_x = -world_size / 2.0
-    origin_y = -world_size / 2.0
-
+def world_to_grid_node(x, y, origin_x=-3.343, origin_y=-1.609, resolution=0.05):
     col = int((x - origin_x) / resolution)
     row = int((y - origin_y) / resolution)
 
     return col, row
+
+
+def grid_to_world_node(col, row, origin_x=-3.343, origin_y=-1.609, resolution=0.05):
+    x = col * resolution + origin_x
+    y = row * resolution + origin_y
+
+    return x, y
 
 
 class DijkstraNavigationNode(Node):
@@ -52,8 +55,8 @@ class DijkstraNavigationNode(Node):
         self.current_y = None
         self.current_yaw = None
 
-        self.spawn_x = -9.0
-        self.spawn_y = -9.0
+        self.spawn_x = 0.0
+        self.spawn_y = 0.0
 
         self.world_path = []
         self.path_generated = False
@@ -65,23 +68,29 @@ class DijkstraNavigationNode(Node):
         self.distance_tolerance = 0.15
         self.angle_tolerance = 0.15
 
-        self.max_linear_speed = 0.80
-        self.medium_linear_speed = 0.60
-        self.min_linear_speed = 0.35
+        self.max_linear_speed = 0.15
+        self.medium_linear_speed = 0.08
+        self.min_linear_speed = 0.04
 
-        self.angular_speed = 1.5
+        self.angular_speed = 0.2
 
-        self.world_size = 30.0
-        self.resolution = 0.2
+        self.map_width = 135
+        self.map_height = 113
+
+        self.origin_x = -3.343
+        self.origin_y = -1.609
+        self.resolution = 0.05
         self.safety_distance = 0.4
 
-        self.world_file = "/home/yilun/tfg_ws/src/tfg_worlds/worlds/experimento_simple.world"
+        self.map_file = "/home/yilun/tfg_ws/src/tfg_robot/maps/mymap.pgm"
 
-        self.grid = create_grid_from_world(
-          world_file=self.world_file,
-          resolution=self.resolution,
-          world_size=self.world_size
-        )
+        img = Image.open(self.map_file).convert("L")
+        map_array = np.array(img)
+
+        self.grid = np.zeros_like(map_array)
+
+        self.grid[map_array < 50] = 1
+        self.grid[map_array >= 50] = 0
 
        # Keep original grid for RViz2 visualization
         self.visual_grid = self.grid
@@ -111,18 +120,19 @@ class DijkstraNavigationNode(Node):
 
         self.current_yaw = math.atan2(siny_cosp, cosy_cosp)
 
-    def generate_path_from_robot_position(self):
         start = world_to_grid_node(
-            self.current_x,
-            self.current_y,
-            self.world_size,
-            self.resolution
+           self.current_x,
+           self.current_y,
+           self.origin_x,
+           self.origin_y,
+           self.resolution
         )
 
         goal = world_to_grid_node(
-            9.0,
-            9.0,
-            self.world_size,
+            -2.2,
+            3.0,
+            self.origin_x,
+            self.origin_y,
             self.resolution
         )
 
@@ -154,11 +164,16 @@ class DijkstraNavigationNode(Node):
             self.world_path = []
             return
 
-        self.world_path = path_to_world(
-            path,
-            world_size=self.world_size,
-            resolution=self.resolution
-        )
+        self.world_path = [
+            grid_to_world_node(
+                col,
+                row,
+                self.origin_x,
+                self.origin_y,
+                self.resolution
+            )
+            for col, row in path
+        ]
 
         # Reduce waypoints to make motion smoother
         self.world_path = self.reduce_waypoints_dynamic(self.world_path)
@@ -183,8 +198,8 @@ class DijkstraNavigationNode(Node):
         map_msg.info.width = self.grid.shape[1]
         map_msg.info.height = self.grid.shape[0]
 
-        map_msg.info.origin.position.x = -self.world_size / 2.0
-        map_msg.info.origin.position.y = -self.world_size / 2.0
+        map_msg.info.origin.position.x = self.origin_x
+        map_msg.info.origin.position.y = self.origin_y
         map_msg.info.origin.orientation.w = 1.0
 
         data = []
@@ -212,7 +227,7 @@ class DijkstraNavigationNode(Node):
             pose.header.frame_id = "map"
             pose.header.stamp = self.get_clock().now().to_msg()
 
-            pose.pose.position.x = -x
+            pose.pose.position.x = x
             pose.pose.position.y = y
             pose.pose.position.z = 0.0
             pose.pose.orientation.w = 1.0
