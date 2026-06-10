@@ -120,6 +120,7 @@ class DijkstraNavigationNode(Node):
 
         self.current_yaw = math.atan2(siny_cosp, cosy_cosp)
 
+    def generate_path_from_robot_position(self):
         start = world_to_grid_node(
            self.current_x,
            self.current_y,
@@ -128,6 +129,7 @@ class DijkstraNavigationNode(Node):
            self.resolution
         )
 
+    
         goal = world_to_grid_node(
             -2.2,
             3.0,
@@ -191,7 +193,7 @@ class DijkstraNavigationNode(Node):
     def publish_map(self):
         map_msg = OccupancyGrid()
 
-        map_msg.header.frame_id = "map"
+        map_msg.header.frame_id = "odom"
         map_msg.header.stamp = self.get_clock().now().to_msg()
 
         map_msg.info.resolution = self.resolution
@@ -219,12 +221,12 @@ class DijkstraNavigationNode(Node):
 
     def publish_path(self):
         path_msg = Path()
-        path_msg.header.frame_id = "map"
+        path_msg.header.frame_id = "odom"
         path_msg.header.stamp = self.get_clock().now().to_msg()
 
         for x, y in self.world_path:
             pose = PoseStamped()
-            pose.header.frame_id = "map"
+            pose.header.frame_id = "odom"
             pose.header.stamp = self.get_clock().now().to_msg()
 
             pose.pose.position.x = x

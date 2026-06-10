@@ -5,12 +5,12 @@ import numpy as np
 from PIL import Image
 from rclpy.node import Node
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 
 from tfg_robot.astar_planner import astar
-
-
+from sensor_msgs.msg import LaserScan
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 
@@ -25,13 +25,18 @@ def world_to_grid_node(x, y, origin_x=-3.343, origin_y=-1.609, resolution=0.05):
 
     return col, row
 
+def grid_to_world_node(col, row, origin_x=-3.343, origin_y=-1.609, resolution=0.05):
+    x = col * resolution + origin_x
+    y = row * resolution + origin_y
+
+    return x, y
 
 class AStarNavigationNode(Node):
 
     def __init__(self):
         super().__init__("astar_navigation_node")
 
-        self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.cmd_pub = self.create_publisher(TwistStamped, "/cmd_vel", 10)
         self.path_pub = self.create_publisher(Path, "/astar_path", 10)
 
         self.map_pub = self.create_publisher(
@@ -47,6 +52,23 @@ class AStarNavigationNode(Node):
             10
         )
 
+        scan_qos = QoSProfile(depth=10)
+        scan_qos.reliability = ReliabilityPolicy.BEST_EFFORT
+
+        self.scan_sub = self.create_subscription(
+            LaserScan,
+            "/scan",
+            self.scan_callback,
+            scan_qos
+        )
+
+        self.latest_scan = None
+        self.avoid_direction = None
+        self.avoid_mode = "normal"
+        self.avoid_direction = None
+        self.avoid_start_time = None
+        self.avoid_forward_start_time = None
+
         self.current_x = None
         self.current_y = None
         self.current_yaw = None
@@ -61,10 +83,10 @@ class AStarNavigationNode(Node):
         self.navigation_start_time = None
         self.navigation_end_time = None
 
-        self.distance_tolerance = 0.1
-        self.angle_tolerance = 0.08
+        self.distance_tolerance = 0.12
+        self.angle_tolerance = 0.12
 
-        self.linear_speed = 0.15
+        self.linear_speed = 0.06
         self.angular_speed = 0.2
 
         self.map_width = 135
@@ -73,7 +95,7 @@ class AStarNavigationNode(Node):
         self.origin_x = -3.343
         self.origin_y = -1.609
         self.resolution = 0.05
-
+        self.avoid_direction = None
         self.map_file = "/home/yilun/tfg_ws/src/tfg_robot/maps/mymap.pgm"
 
 
@@ -90,7 +112,7 @@ class AStarNavigationNode(Node):
 # Use inflated grid only for A* planning
         self.planning_grid = self.inflate_obstacles(
            self.grid,
-           inflation_radius=2
+           inflation_radius=0
         )
 
         self.timer = self.create_timer(0.1, self.control_loop)
@@ -101,9 +123,9 @@ class AStarNavigationNode(Node):
         )
 
     def odom_callback(self, msg):
-        self.current_x = msg.pose.pose.position.x + self.spawn_x
+        self.current_x = msg.pose.pose.position.x
 
-        self.current_y = msg.pose.pose.position.y + self.spawn_y
+        self.current_y = msg.pose.pose.position.y
 
         q = msg.pose.pose.orientation
 
@@ -111,6 +133,13 @@ class AStarNavigationNode(Node):
         cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
 
         self.current_yaw = math.atan2(siny_cosp, cosy_cosp)
+
+    def scan_callback(self, msg):
+      self.latest_scan = msg
+
+      self.get_logger().info(
+        f"Laser received: {len(msg.ranges)}"
+      ) 
 
     def generate_path_from_robot_position(self):
         start = world_to_grid_node(
@@ -122,8 +151,8 @@ class AStarNavigationNode(Node):
         )
 
         goal = world_to_grid_node(
-            -2.2,
-            3.0,
+            1.7,
+            -1.0,
             self.origin_x,
             self.origin_y,
             self.resolution
@@ -144,7 +173,8 @@ class AStarNavigationNode(Node):
 
         start_time = time.perf_counter()
 
-        path, visited_nodes = astar(self.planning_grid, start, goal)
+        dynamic_grid = self.add_scan_obstacles_to_grid()
+        path, visited_nodes = astar(dynamic_grid, start, goal)
 
         end_time = time.perf_counter()
 
@@ -155,6 +185,8 @@ class AStarNavigationNode(Node):
         if path is None:
             self.get_logger().error("No path found.")
             self.world_path = []
+            self.path_generated = True
+            self.stop_robot()
             return
         
         self.get_logger().info("Path found.")
@@ -170,12 +202,6 @@ class AStarNavigationNode(Node):
             for col, row in path
         ]
         
-        def grid_to_world_node(col, row, origin_x=-3.343, origin_y=-1.609, resolution=0.05):
-            x = col * resolution + origin_x
-            y = row * resolution + origin_y
-
-            return x, y
-
 
          # Reduce waypoints to make motion smoother
         self.world_path = self.reduce_waypoints_by_angle(
@@ -198,7 +224,7 @@ class AStarNavigationNode(Node):
 
         map_msg = OccupancyGrid()
 
-        map_msg.header.frame_id = "map"
+        map_msg.header.frame_id = "odom"
         map_msg.header.stamp = self.get_clock().now().to_msg()
 
         map_msg.info.resolution = self.resolution
@@ -226,6 +252,41 @@ class AStarNavigationNode(Node):
         self.map_pub.publish(map_msg)    
 
 
+    def add_scan_obstacles_to_grid(self):
+       dynamic_grid = np.copy(self.grid)
+
+       if self.latest_scan is None:
+          return dynamic_grid
+
+       angle = self.latest_scan.angle_min
+
+       for r in self.latest_scan.ranges:
+        if math.isfinite(r) and r > 0.05:
+            if self.latest_scan.range_min < r < self.latest_scan.range_max:
+
+                obstacle_x = self.current_x + r * math.cos(self.current_yaw + angle)
+                obstacle_y = self.current_y + r * math.sin(self.current_yaw + angle)
+
+                col, row = world_to_grid_node(
+                    obstacle_x,
+                    obstacle_y,
+                    self.origin_x,
+                    self.origin_y,
+                    self.resolution
+                )
+
+                if 0 <= row < dynamic_grid.shape[0] and 0 <= col < dynamic_grid.shape[1]:
+                    dynamic_grid[row][col] = 1
+
+        angle += self.latest_scan.angle_increment
+
+        dynamic_grid = self.inflate_obstacles(
+           dynamic_grid,
+          inflation_radius=3
+        )
+
+        return dynamic_grid
+
     def inflate_obstacles(self, grid, inflation_radius=0.005):
         inflated_grid = np.copy(grid)
 
@@ -252,12 +313,12 @@ class AStarNavigationNode(Node):
     
     def publish_path(self):
         path_msg = Path()
-        path_msg.header.frame_id = "map"
+        path_msg.header.frame_id = "odom"
         path_msg.header.stamp = self.get_clock().now().to_msg()
 
         for x, y in self.world_path:
            pose = PoseStamped()
-           pose.header.frame_id = "map"
+           pose.header.frame_id = "odom"
            pose.header.stamp = self.get_clock().now().to_msg()
 
            pose.pose.position.x = x
@@ -316,6 +377,7 @@ class AStarNavigationNode(Node):
             return
 
         if not self.path_generated:
+            self.path_generated = True
             self.generate_path_from_robot_position()
             return
 
@@ -351,23 +413,96 @@ class AStarNavigationNode(Node):
         target_angle = math.atan2(dy, dx)
         angle_error = self.normalize_angle(target_angle - self.current_yaw)
 
-        cmd = Twist()
+        cmd = TwistStamped()
 
+        
+
+        now = time.perf_counter()
+
+        front_ranges = []
+        left_ranges = []
+        right_ranges = []
+
+        if self.latest_scan is not None:
+            for i in range(len(self.latest_scan.ranges)):
+                angle = self.latest_scan.angle_min + i * self.latest_scan.angle_increment
+                r = self.latest_scan.ranges[i]
+
+                if math.isfinite(r) and r > 0.05:
+                    if -0.35 < angle < 0.35:
+                        front_ranges.append(r)
+                    elif 0.35 <= angle < 1.2:
+                        left_ranges.append(r)
+                    elif -1.2 < angle <= -0.35:
+                        right_ranges.append(r)
+
+        min_front = min(front_ranges) if len(front_ranges) > 0 else 999.0
+        left_clear = min(left_ranges) if len(left_ranges) > 0 else 999.0
+        right_clear = min(right_ranges) if len(right_ranges) > 0 else 999.0
+
+        if distance < 0.4:
+            safe_distance = 0.25
+        else:
+            safe_distance = 0.35
+
+        if self.avoid_mode == "normal" and min_front < safe_distance:
+            self.avoid_mode = "turning"
+            self.avoid_start_time = now
+
+            if left_clear > right_clear:
+                self.avoid_direction = 1
+            else:
+                self.avoid_direction = -1
+
+            self.get_logger().warn(
+                f"Start avoiding: front={min_front:.2f}, "
+                f"left={left_clear:.2f}, "
+                f"right={right_clear:.2f}, "
+                f"direction={self.avoid_direction}"
+            )
+
+        if self.avoid_mode == "turning":
+            if min_front < safe_distance:
+                cmd.twist.linear.x = 0.0
+                cmd.twist.angular.z = self.avoid_direction * 0.35
+                self.cmd_pub.publish(cmd)
+                return
+            else:
+                self.avoid_mode = "forward"
+                self.avoid_forward_start_time = now
+                return
+
+        if self.avoid_mode == "forward":
+            if now - self.avoid_forward_start_time < 1.5:
+                cmd.twist.linear.x = 0.04
+                cmd.twist.angular.z = self.avoid_direction * 0.08
+                self.cmd_pub.publish(cmd)
+                return
+            else:
+                self.avoid_mode = "normal"
+                self.avoid_direction = None
+
+                self.current_waypoint_index = min(
+                    self.current_waypoint_index + 8,
+                    len(self.world_path) - 1
+                )
         if distance < self.distance_tolerance:
             self.current_waypoint_index += 1
             return
 
         if abs(angle_error) > self.angle_tolerance:
-            cmd.linear.x = 0.0
-            cmd.angular.z = self.angular_speed if angle_error > 0 else -self.angular_speed
+            cmd.twist.linear.x = 0.0
+            cmd.twist.angular.z = self.angular_speed if angle_error > 0 else -self.angular_speed
         else:
-            cmd.linear.x = self.linear_speed
-            cmd.angular.z = 0.9 * angle_error
+            cmd.twist.linear.x = self.linear_speed
+            cmd.twist.angular.z = 0.9 * angle_error
 
         self.cmd_pub.publish(cmd)
 
     def stop_robot(self):
-        cmd = Twist()
+        cmd = TwistStamped()
+        cmd.header.stamp = self.get_clock().now().to_msg()
+        cmd.header.frame_id = ""
         self.cmd_pub.publish(cmd)
 
 
